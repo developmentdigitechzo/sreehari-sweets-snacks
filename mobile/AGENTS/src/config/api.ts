@@ -17,6 +17,12 @@ function devServerHost(): string | null {
  */
 function chooseApiUrl(): string {
   try {
+    // When running in production on the web (e.g. Vercel), route through the same-origin proxy (/api-proxy).
+    // This completely bypasses any cPanel/hosting preflight CORS restrictions while communicating directly with cPanel.
+    if (Platform.OS === 'web' && !__DEV__ && typeof window !== 'undefined') {
+      return `${window.location.origin}/api-proxy`;
+    }
+
     const r = resolveApiUrl({
       isDev: __DEV__,
       override: process.env.EXPO_PUBLIC_API_URL,

@@ -2,6 +2,14 @@
   "version": 2,
   "rewrites": [
     {
+      "source": "/api-proxy/(.*)",
+      "destination": "https://nice-amethyst-canary.172-235-18-108.cpanel.site/api/$1"
+    },
+    {
+      "source": "/uploads-proxy/(.*)",
+      "destination": "https://nice-amethyst-canary.172-235-18-108.cpanel.site/uploads/$1"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
