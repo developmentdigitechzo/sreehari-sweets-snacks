@@ -36,9 +36,16 @@ export function startCatalogSync(): () => void {
       try {
         const since = useCatalog.getState().version ?? '';
         const res = await fetch(`${API_URL}/catalog/wait?version=${encodeURIComponent(since)}&timeout=25`, { signal: c.signal, cache: 'no-store' });
-        const body = (await res.json()) as { changed?: boolean };
         clearTimeout(kill);
+        if (res.status === 428 || res.status === 501 || res.status === 404 || res.status === 405) {
+          // The hosting proxy / firewall does not support long-polling connections (returns 428 / 501).
+          // Fall back to a quiet periodic reload every 30 seconds without showing an error banner.
+          await sleep(30_000);
+          void useCatalog.getState().ensureFresh(25_000);
+          continue;
+        }
         if (!res.ok) throw new Error(String(res.status));
+        const body = (await res.json()) as { changed?: boolean };
         delay = 2000;
         if (useCatalog.getState().refreshError) void useCatalog.getState().load({ silent: true }); // back online: reload and clear the banner
         if (body.changed) {
