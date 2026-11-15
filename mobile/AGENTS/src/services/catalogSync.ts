@@ -13,7 +13,9 @@ import { useCatalog } from '../store/useCatalog';
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export function startCatalogSync(): () => void {
-  if (USE_MOCK_API) return () => undefined;
+  // Long polling is disabled on web because hosting firewalls/proxies disallow hanging requests (428 Precondition Required).
+  // On web, useCatalog.ensureFresh handles reloading when navigating or focusing screens.
+  if (USE_MOCK_API || typeof window !== 'undefined') return () => undefined;
   let stopped = false;
   let controller: AbortController | null = null;
 
