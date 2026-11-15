@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: light; }
+
+html, body { background: #F8F0E5; color: #29262B; }
+body {
+  background-image: radial-gradient(900px 500px at 85% -10%, rgba(251, 230, 231, 0.7), transparent 60%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible { outline: 2px solid #B00713; outline-offset: 2px; border-radius: 6px; }
+
+@layer components {
+  .card { @apply rounded-xl2 border border-line bg-white shadow-card; }
+  /* Control height is 42px for buttons and inputs so a toolbar row lines up; .btn-sm (36px) is for table rows. */
+  .btn { @apply inline-flex min-h-[42px] items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-primary { @apply btn bg-burgundy text-white hover:bg-burgundy-light; }
+  .btn-outline { @apply btn border border-line bg-white text-burgundy hover:bg-burgundy-soft; }
+  .btn-ghost { @apply btn text-ink-muted hover:bg-cream-deep; }
+  .btn-danger { @apply btn bg-bad text-white hover:opacity-90; }
+  .btn-sm { @apply !min-h-[36px] !px-3; }
+  .icon-btn { @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-navy transition-colors hover:bg-navy-soft disabled:cursor-not-allowed disabled:opacity-50; }
+  .icon-btn-bad { @apply text-bad hover:bg-bad-soft; }
+  .page-title { @apply font-serif text-2xl font-bold leading-tight text-burgundy sm:text-3xl; }
+  .section-title { @apply font-serif text-lg font-bold leading-snug text-burgundy; }
+  .input { @apply min-h-[42px] w-full rounded-lg border border-line bg-white px-3 text-sm text-ink placeholder:text-ink-faint focus:border-burgundy disabled:bg-cream-deep aria-[invalid=true]:border-bad; }
+  .label { @apply mb-1 block text-sm font-semibold text-ink; }
+  .th { @apply px-3 py-3 text-left text-xs font-semibold uppercase tracking-wide text-ink-muted; }
+  .td { @apply px-3 py-3 text-sm align-middle; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

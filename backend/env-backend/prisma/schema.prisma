@@ -1,0 +1,596 @@
+// Shree Hari Sweets & Snacks — PostgreSQL schema (POC foundation).
+// Money is NUMERIC(12,2), never floating point. Currency is explicit (INR).
+// Single store for the MVP; storeId columns keep the model ready for branches.
+// CHECK constraints (non-negative prices/stock, positive quantities) live in the migration SQL.
+
+generator client {
+  provider      = "prisma-client-js"
+  // Linux engines for the cPanel host (it reported debian-openssl-1.1.x; 3.0.x kept for a future OS upgrade), plus this machine.
+  binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  SUPER_ADMIN
+  MANAGER
+}
+
+enum CouponType {
+  PERCENT
+  FLAT
+  FREESHIP
+}
+
+enum OrderStatus {
+  PLACED
+  CONFIRMED
+  PREPARING
+  PACKED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  UPI
+  CARD
+  WALLET
+  NETBANKING
+  COD
+}
+
+enum PaymentStatus {
+  PAID
+  PENDING
+  PROCESSING
+  FAILED
+  CANCELLED
+  REFUNDED
+  COD_DUE
+}
+
+model Customer {
+  id        String    @id @default(uuid())
+  phone     String    @unique
+  name      String
+  email     String?   @unique
+  /// scrypt hash (see modules/auth/password.ts). Null for the seeded demo customer, who signs in via demo-login only.
+  passwordHash String?
+  /// Set when the customer proved they own the number with a one-time code.
+  phoneVerifiedAt DateTime?
+  /// Set when the customer proved they own the email address by opening the emailed link.
+  emailVerifiedAt DateTime?
+  role      Role      @default(CUSTOMER)
+  isDemo    Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  addresses Address[]
+  orders    Order[]
+  cartItems CartItem[]
+  ledger    RewardLedger[]
+  notifications Notification[]
+  resetTokens PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+  /// Staff can block a customer; blocked customers cannot sign in or order.
+  isBlocked Boolean @default(false)
+  blockedAt DateTime?
+  /// Marketing messages (push/SMS/WhatsApp) are only sent to customers who opted in.
+  marketingOptIn Boolean @default(false)
+  deviceTokens DeviceToken[]
+  returnRequests ReturnRequest[]
+}
+
+model Address {
+  id           String   @id @default(uuid())
+  customerId   String
+  label        String
+  name         String
+  phone        String
+  line1        String
+  area         String
+  city         String
+  pincode      String
+  state        String?
+  landmark     String?
+  /// Only set when the customer confirmed a GPS-detected location. Never guessed.
+  latitude     Decimal? @db.Decimal(9, 6)
+  longitude    Decimal? @db.Decimal(9, 6)
+  instructions String?
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  customer     Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+}
+
+model ServiceablePincode {
+  pincode   String  @id
+  storeId   String  @default("main")
+  isActive  Boolean @default(true)
+}
+
+model Category {
+  id        String     @id // slug
+  name      String
+  parentId  String?
+  imageKey  String
+  /// Uploaded image; falls back to the bundled asset in imageKey.
+  imageUrl  String?
+  sortOrder Int        @default(0)
+  isActive  Boolean    @default(true)
+  parent    Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryTree")
+  products  Product[]
+}
+
+model Collection {
+  id          String   @id
+  name        String
+  subtitle    String
+  imageKey    String
+  tone        String
+  categoryIds String[]
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+}
+
+model Banner {
+  id         String   @id
+  eyebrow    String
+  title      String
+  accent     String?
+  cta        String
+  imageKey   String
+  targetType String // collection | offers | search
+  targetId   String?
+  /// home_slider | category | promo | popup | section
+  placement  String   @default("home_slider")
+  /// Uploaded image. Falls back to the bundled demo asset in imageKey.
+  imageUrl   String?
+  sortOrder  Int      @default(0)
+  startsAt   DateTime?
+  endsAt     DateTime?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+}
+
+model Product {
+  id          String   @id // slug; unique, archive instead of delete
+  name        String
+  tagline     String
+  description String
+  categoryId  String
+  badge       String?
+  tags        String[]
+  /// DEMO ONLY sample rating — never real customer data.
+  demoRating      Decimal? @db.Decimal(2, 1)
+  demoRatingCount String?
+  highlights  Json     @default("[]")
+  featured    Json     @default("{}")
+  /// Cake-only options (flavours, message rules, lead-time notice). Null for sweets/snacks.
+  cake        Json?
+  isActive    Boolean  @default(true)
+  archivedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  category    Category @relation(fields: [categoryId], references: [id])
+  variants    ProductVariant[]
+  images      ProductImage[]
+
+  @@index([categoryId, isActive])
+}
+
+model ProductVariant {
+  id        String   @id
+  productId String
+  sku       String   @unique
+  label     String
+  mrp       Decimal  @db.Decimal(12, 2)
+  price     Decimal  @db.Decimal(12, 2)
+  stock     Int
+  popular   Boolean  @default(false)
+  storeId   String   @default("main")
+  product   Product  @relation(fields: [productId], references: [id])
+  cartItems CartItem[]
+
+  @@index([productId])
+}
+
+model ProductImage {
+  id        String  @id @default(uuid())
+  productId String
+  /// Bundled demo asset key (POC) — or null when `url` is used.
+  key       String?
+  /// Object-storage / CDN URL. Never Base64 in the database.
+  url       String?
+  sortOrder Int     @default(0)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId, sortOrder])
+}
+
+model Coupon {
+  code        String      @id
+  title       String
+  description String
+  type        CouponType
+  value       Decimal     @db.Decimal(12, 2)
+  minOrder    Decimal     @db.Decimal(12, 2)
+  maxDiscount Decimal?    @db.Decimal(12, 2)
+  startsAt    DateTime?
+  expiresAt   DateTime?
+  /// Empty lists = valid for the whole cart. Otherwise only matching lines count toward the discount.
+  categoryIds String[]
+  productIds  String[]
+  usageLimit  Int?
+  usedCount   Int         @default(0)
+  isActive    Boolean     @default(true)
+  redemptions CouponRedemption[]
+}
+
+model CouponRedemption {
+  id         String   @id @default(uuid())
+  couponCode String
+  orderId    String   @unique
+  customerId String
+  discount   Decimal  @db.Decimal(12, 2)
+  createdAt  DateTime @default(now())
+  coupon     Coupon   @relation(fields: [couponCode], references: [code])
+  order      Order    @relation(fields: [orderId], references: [id])
+}
+
+model CartItem {
+  id         String         @id @default(uuid())
+  customerId String
+  variantId  String
+  /// Identity of the configuration: variantId|flavour|message. Differently customised cakes are separate rows.
+  lineKey    String
+  options    Json?
+  qty        Int
+  updatedAt  DateTime       @updatedAt
+  customer   Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  variant    ProductVariant @relation(fields: [variantId], references: [id])
+
+  @@unique([customerId, lineKey])
+}
+
+model Order {
+  id             String        @id @default(uuid())
+  number         String        @unique // SH12457
+  idempotencyKey String        @unique
+  customerId     String
+  status         OrderStatus   @default(PLACED)
+  couponCode     String?
+  mrpTotal       Decimal       @db.Decimal(12, 2)
+  itemDiscount   Decimal       @db.Decimal(12, 2)
+  subtotal       Decimal       @db.Decimal(12, 2)
+  couponDiscount Decimal       @db.Decimal(12, 2)
+  rewardDiscount Decimal       @db.Decimal(12, 2)
+  deliveryFee    Decimal       @db.Decimal(12, 2)
+  total          Decimal       @db.Decimal(12, 2)
+  currency       String        @default("INR")
+  /// Immutable snapshots: later catalogue / address edits never rewrite history.
+  totalsSnapshot  Json
+  addressSnapshot Json
+  slotSnapshot    Json
+  storeId        String        @default("main")
+  isDemo         Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  customer       Customer      @relation(fields: [customerId], references: [id])
+  items          OrderItem[]
+  events         OrderEvent[]
+  payment        Payment?
+  redemption     CouponRedemption?
+  returnRequests ReturnRequest[]
+
+  @@index([customerId, createdAt])
+  @@index([status, createdAt])
+}
+
+model OrderItem {
+  id           String  @id @default(uuid())
+  orderId      String
+  productId    String
+  name         String
+  sku          String
+  variantLabel String
+  unitPrice    Decimal @db.Decimal(12, 2)
+  mrp          Decimal @db.Decimal(12, 2)
+  qty          Int
+  imageKey     String?
+  imageUrl     String?
+  options      Json?
+  order        Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+model OrderEvent {
+  id        String      @id @default(uuid())
+  orderId   String
+  status    OrderStatus
+  actor     String      @default("system")
+  at        DateTime    @default(now())
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, at])
+}
+
+model Payment {
+  id        String        @id @default(uuid())
+  orderId   String        @unique
+  method    PaymentMethod
+  status    PaymentStatus
+  amount    Decimal       @db.Decimal(12, 2)
+  currency  String        @default("INR")
+  reference String        @unique
+  /// "simulated" (demo), "razorpay", or "test" (automated tests only).
+  provider  String        @default("simulated")
+  providerOrderId   String? @unique
+  providerPaymentId String? @unique
+  /// POC/demo flag. False for real provider payments.
+  simulated Boolean       @default(true)
+  events    PaymentEvent[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  order     Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+/// Append-only: rows are never updated or deleted; corrections are new rows.
+model RewardLedger {
+  id         String   @id @default(uuid())
+  customerId String
+  points     Int
+  note       String
+  orderId    String?
+  createdAt  DateTime @default(now())
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  @@index([customerId, createdAt])
+}
+
+model Notification {
+  id         String   @id @default(uuid())
+  customerId String
+  kind       String
+  title      String
+  body       String
+  channel    String   @default("in_app")
+  /// POC: notifications are recorded, not delivered by a push/SMS provider.
+  simulated  Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  customer   Customer @relation(fields: [customerId], references: [id])
+  broadcastId String?
+  readAt     DateTime?
+
+  @@index([customerId, createdAt])
+}
+
+/// One-time codes for phone verification / login. Only a keyed hash of the code is stored.
+model OtpChallenge {
+  id        String    @id @default(uuid())
+  phone     String
+  purpose   String // login | verify_phone
+  codeHash  String
+  attempts  Int       @default(0)
+  expiresAt DateTime
+  consumedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([phone, createdAt])
+}
+
+/// Password-reset tokens. Only the SHA-256 hash is stored; the raw token exists only in the emailed link.
+model PasswordResetToken {
+  id         String    @id @default(uuid())
+  customerId String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime  @default(now())
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, createdAt])
+}
+
+/// Single-use email verification link. Only the SHA-256 hash is stored; `email` is the address the link was sent to.
+model EmailVerificationToken {
+  id         String    @id @default(uuid())
+  customerId String
+  email      String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime  @default(now())
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId, createdAt])
+}
+
+/// Audit log of verified payment-provider webhooks. providerEventId is unique => processing is idempotent.
+model PaymentEvent {
+  id              String   @id @default(uuid())
+  provider        String
+  providerEventId String   @unique
+  type            String
+  paymentId       String?
+  payload         Json
+  note            String?
+  receivedAt      DateTime @default(now())
+  payment         Payment? @relation(fields: [paymentId], references: [id])
+}
+
+/// Every stock change, in one place. Append-only (DB trigger).
+model StockMovement {
+  id         String   @id @default(uuid())
+  variantId  String
+  sku        String
+  delta      Int
+  stockAfter Int
+  /// ORDER | CANCEL | RETURN | ADJUSTMENT | RESTOCK | CORRECTION | EXPIRY
+  reason     String
+  note       String?
+  actor      String   @default("system")
+  orderId    String?
+  createdAt  DateTime @default(now())
+
+  @@index([variantId, createdAt])
+  @@index([createdAt])
+}
+
+/// Who changed what. Append-only (DB trigger). Never stores passwords or secrets.
+model AuditLog {
+  id        String   @id @default(uuid())
+  actorId   String?
+  actorName String
+  actorRole String
+  action    String
+  entity    String
+  entityId  String?
+  summary   String
+  meta      Json?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([entity, entityId])
+}
+
+/// Real banner impressions and taps reported by the customer app.
+model BannerEvent {
+  id         String   @id @default(uuid())
+  bannerId   String
+  /// view | click
+  type       String
+  customerId String?
+  createdAt  DateTime @default(now())
+
+  @@index([bannerId, type, createdAt])
+}
+
+model Campaign {
+  id          String   @id @default(uuid())
+  name        String
+  /// festive | flash_deal | acquisition | loyalty | other
+  kind        String
+  offerText   String
+  couponCode  String?
+  startsAt    DateTime?
+  endsAt      DateTime?
+  recurrence  String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Segment {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String
+  /// Rule object, see modules/admin/segments.ts (spend, order counts, recency, coupon use).
+  rule        Json
+  isSystem    Boolean   @default(false)
+  lastUsedAt  DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+/// A message to many customers on one channel: in_app | push | sms | whatsapp.
+model Broadcast {
+  id           String   @id @default(uuid())
+  channel      String
+  title        String
+  message      String
+  imageUrl     String?
+  audienceType String // all | segment
+  segmentId    String?
+  /// DRAFT | SCHEDULED | SENDING | SENT | PARTIAL | FAILED | BLOCKED
+  status       String   @default("DRAFT")
+  scheduledAt  DateTime?
+  sentAt       DateTime?
+  targeted     Int      @default(0)
+  delivered    Int      @default(0)
+  failed       Int      @default(0)
+  error        String?
+  createdBy    String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  deliveries   BroadcastDelivery[]
+
+  @@index([status, scheduledAt])
+}
+
+model BroadcastDelivery {
+  id                String    @id @default(uuid())
+  broadcastId       String
+  customerId        String
+  /// SENT | FAILED
+  status            String
+  error             String?
+  providerMessageId String?
+  createdAt         DateTime  @default(now())
+  broadcast         Broadcast @relation(fields: [broadcastId], references: [id], onDelete: Cascade)
+
+  @@unique([broadcastId, customerId])
+}
+
+model MessageTemplate {
+  id        String   @id @default(uuid())
+  name      String
+  channel   String
+  title     String
+  body      String
+  createdAt DateTime @default(now())
+}
+
+model DeviceToken {
+  id         String   @id @default(uuid())
+  customerId String
+  token      String   @unique
+  platform   String
+  updatedAt  DateTime @updatedAt
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+}
+
+/// A customer's return or cancellation request and the admin's decision / refund record.
+model ReturnRequest {
+  id              String    @id @default(uuid())
+  orderId         String
+  customerId      String
+  /// RETURN | CANCELLATION
+  kind            String
+  reason          String
+  details         String?
+  /// Order item ids covered (null = whole order).
+  items           Json?
+  /// REQUESTED | APPROVED | REJECTED | REFUNDED | CLOSED
+  status          String    @default("REQUESTED")
+  refundAmount    Decimal?  @db.Decimal(12, 2)
+  /// provider | manual
+  refundMode      String?
+  refundReference String?
+  adminNote       String?
+  decidedBy       String?
+  decidedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  order           Order     @relation(fields: [orderId], references: [id])
+  customer        Customer  @relation(fields: [customerId], references: [id])
+
+  @@index([status, createdAt])
+  @@index([orderId])
+}
+
+model Setting {
+  key       String   @id
+  value     Json
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+}

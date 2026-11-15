@@ -1,0 +1,54 @@
+
+> shree-hari-backend@0.1.0 test:integration
+> node --import tsx --test src/integration/api.integration.test.ts
+
+▶ auth
+  ✔ weak password, missing consent and bad phone are rejected (400) (99.431ms)
+  ✔ signup creates an account, never returns the password hash, and rejects duplicates (193.9396ms)
+  ✔ the stored password is a salted scrypt hash, not plain text (54.151ms)
+  ✔ login works by phone and by email; wrong password and unknown user get the SAME 401 message (203.4911ms)
+  ✔ protected routes need a token, and a bad token is rejected (10.3704ms)
+  ✔ forgot-password with no email provider says so (503) instead of pretending it sent mail (2.7554ms)
+✔ auth (611.8843ms)
+▶ catalogue (cakes)
+  ✔ catalogue serves nine cakes with options and no sweets images (77.923ms)
+✔ catalogue (cakes) (78.242ms)
+▶ addresses (GPS) and ownership
+  ✔ create with confirmed GPS coordinates, then read back (23.1354ms)
+  ✔ latitude without longitude and out-of-range values are rejected (6.8402ms)
+  ✔ another customer cannot see, edit or delete it (404, not 403) (13.2942ms)
+  ✔ owner can edit then delete (14.7148ms)
+✔ addresses (GPS) and ownership (58.4435ms)
+▶ cart persistence with customised cakes
+  ✔ differently customised lines of one size persist as separate rows (45.1583ms)
+  ✔ quantity per size is capped by stock across all of its lines (11.1873ms)
+  ✔ one customer's cart is invisible to another (4.3774ms)
+  ✔ sold-out sizes and unknown variants are dropped (5.8443ms)
+✔ cart persistence with customised cakes (66.9544ms)
+▶ orders
+  ✔ unauthenticated order is rejected (2.4773ms)
+  ✔ server recalculates price: a tampered client price is ignored (52.2624ms)
+  ✔ idempotency: the same key returns the same order and stock is taken once (177.9812ms)
+  ✔ customised cake lines are stored in the order snapshot (33.7047ms)
+  ✔ unserviceable pincode cannot be paid for (422) (6.1116ms)
+  ✔ a simulated payment failure creates no order and holds no stock (13.3204ms)
+  ✔ pending payment can be reconciled; another customer cannot (35.6137ms)
+  ✔ another customer cannot read the order (IDOR) (41.571ms)
+  ✔ customers cannot change order status (24.2841ms)
+  ✔ last unit: two simultaneous buyers, exactly one wins (28.1874ms)
+  ✔ coupon usage cap prevents over-redemption (49.7617ms)
+  ✔ reward ledger is append-only at the database level (42.4182ms)
+✔ orders (508.5738ms)
+▶ weather and geocoding adapters
+  ✔ invalid coordinates are rejected (400) (8.706ms)
+  ✔ valid request returns real data or an honest 502, never invented data; second call is cached (821.3777ms)
+  ✔ reverse geocoding answers 501 (not configured) instead of inventing an address (3.9174ms)
+✔ weather and geocoding adapters (834.2772ms)
+ℹ tests 30
+ℹ suites 6
+ℹ pass 30
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2413.5291

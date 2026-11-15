@@ -1,0 +1,43 @@
+
+> shree-hari-backend@0.1.0 test:flows
+> node --import tsx --test src/integration/flows.integration.test.ts
+
+▶ OTP (development provider)
+  ✔ known number: accepted, flagged as development delivery, code stored only as a hash (426.448ms)
+  ✔ unknown number gets the same response shape, with no code and no challenge row (7.3182ms)
+  ✔ correct code logs in once; the same code cannot be reused (84.9555ms)
+  ✔ wrong codes consume attempts and then lock the challenge, even for the right code (83.5391ms)
+  ✔ resend cooldown blocks an immediate second request, then allows it (1287.7301ms)
+  ✔ an expired code is rejected (95.4647ms)
+  ✔ verify_phone needs sign-in and only works for your own number (129.0769ms)
+  ✔ malformed input is rejected before any work is done (4.3327ms)
+✔ OTP (development provider) (2120.8948ms)
+▶ password reset (development email provider)
+  ✔ known and unknown emails get an identical response; only the known one gets mail (73.6775ms)
+  ✔ the raw token is only in the email; the database holds a hash (73.1482ms)
+  ✔ reset changes the password, old password stops working, token is single-use (233.0024ms)
+  ✔ concurrent use of one token succeeds exactly once (129.5053ms)
+  ✔ a newer link invalidates the older one; expired tokens are rejected (77.6225ms)
+  ✔ per-account throttle: the 4th request in an hour sends no further email (79.2545ms)
+  ✔ garbage tokens are rejected (3.17ms)
+✔ password reset (development email provider) (670.2152ms)
+▶ online payments (test provider, real signature checks)
+  ✔ the server creates the provider order for ITS total; a client "success" claim does not mark it paid (127.1304ms)
+  ✔ retrying the same checkout returns the same provider order (no duplicate order) (81.3572ms)
+  ✔ client verification: bad signature, other customer and tampered ids are refused; a valid signature pays once (183.413ms)
+  ✔ webhooks: forged signature rejected; captured pays; duplicate is a no-op; wrong amount is not trusted (143.0081ms)
+  ✔ payment.failed cancels the order and releases the stock; late "captured" for a cancelled order changes nothing (117.4254ms)
+  ✔ refund.processed marks the payment refunded and reverses the earned points (150.2982ms)
+  ✔ customer cancelling an unpaid payment releases stock; unauthorised users cannot (162.6321ms)
+  ✔ stale unpaid orders are cancelled by the expiry job and stock is released (324.0821ms)
+  ✔ cash on delivery still works without any online payment (79.3278ms)
+  ✔ webhook with no body or no signature is rejected (1.6738ms)
+✔ online payments (test provider, real signature checks) (1371.0657ms)
+ℹ tests 25
+ℹ suites 3
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4650.8137

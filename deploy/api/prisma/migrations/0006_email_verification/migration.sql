@@ -1,0 +1,17 @@
+-- Email verification: when the customer proved they own their email, plus single-use verification tokens.
+-- Additive only: one nullable column and one new table. Existing rows are untouched (every existing email stays "not verified").
+ALTER TABLE "Customer" ADD COLUMN "emailVerifiedAt" TIMESTAMP(3);
+
+CREATE TABLE "EmailVerificationToken" (
+  "id" TEXT NOT NULL,
+  "customerId" TEXT NOT NULL,
+  "email" TEXT NOT NULL,
+  "tokenHash" TEXT NOT NULL,
+  "expiresAt" TIMESTAMP(3) NOT NULL,
+  "usedAt" TIMESTAMP(3),
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "EmailVerificationToken_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "EmailVerificationToken_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "Customer"("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE UNIQUE INDEX "EmailVerificationToken_tokenHash_key" ON "EmailVerificationToken"("tokenHash");
+CREATE INDEX "EmailVerificationToken_customerId_createdAt_idx" ON "EmailVerificationToken"("customerId", "createdAt");

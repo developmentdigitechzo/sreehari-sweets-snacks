@@ -1,0 +1,8 @@
+*.zip
+node_modules/
+.expo/
+dist/
+build/
+.env
+.env.*
+!.env.example

@@ -1,0 +1,25 @@
+# Create a file named exactly  .env  inside the "api" folder on the server (File Manager → api → + File).
+# Fill in the three CHANGE-ME values. Keep this file out of public_html.
+
+NODE_ENV=production
+ENABLE_DEMO_LOGIN=false
+
+# Replace PASSWORD with your database password; an @ in it must be written as %40
+DATABASE_URL=postgresql://sreeharisweets_userdb:PASSWORD@localhost:5432/sreeharisweets_shop?schema=public
+
+# CHANGE-ME: a long random value (48+ characters). Example generator: https://www.random.org/strings/ (or any password manager)
+JWT_SECRET=CHANGE-ME
+
+# CHANGE-ME: the address customers' phones and the admin use to reach this API (https, no trailing slash)
+PUBLIC_URL=https://CHANGE-ME
+
+# The admin panel's address (it calls the API from its own server, so this is only a safety setting)
+CORS_ORIGINS=https://CHANGE-ME
+
+# Online payments, SMS, WhatsApp, push and email stay off until you add real provider credentials
+OTP_PROVIDER=none
+EMAIL_PROVIDER=none
+PAYMENT_PROVIDER=none
+NOTIFY_PUSH_PROVIDER=none
+NOTIFY_SMS_PROVIDER=none
+NOTIFY_WHATSAPP_PROVIDER=none

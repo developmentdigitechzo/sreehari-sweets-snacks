@@ -1,0 +1,39 @@
+
+> shree-hari-backend@0.1.0 test:workflows
+> node --import tsx --test src/integration/workflows.integration.test.ts
+
+▶ Workflow 1: product synchronisation (admin -> app)
+  ✔ a new product appears in the app catalogue; price and availability changes follow; archiving removes it but history stays (401.0212ms)
+  ✔ category and cake changes show up in the app catalogue (92.6485ms)
+✔ Workflow 1: product synchronisation (admin -> app) (900.3455ms)
+▶ Workflow 2: order management (app -> admin -> app)
+  ✔ an order placed in the app is visible to admin; admin status changes reach the app with history and an inbox message (392.9641ms)
+  ✔ another customer can neither see nor change this order (180.1826ms)
+✔ Workflow 2: order management (app -> admin -> app) (573.4863ms)
+▶ Workflow 3: inventory synchronisation
+  ✔ stock is deducted once per order, repeated checkout creates one order, admin adjustments reach the app, overselling is refused (183.7395ms)
+  ✔ the last units cannot be oversold under concurrent checkouts; stock never goes negative; history explains the numbers (202.8782ms)
+  ✔ cancelling an order puts the stock back exactly once (126.249ms)
+✔ Workflow 3: inventory synchronisation (513.3089ms)
+▶ Workflow 4: customer synchronisation
+  ✔ registration, profile edits and addresses made in the app show up in admin (299.2922ms)
+  ✔ a customer blocked in admin cannot keep using an old token (163.1684ms)
+✔ Workflow 4: customer synchronisation (462.7867ms)
+▶ Workflow 5: offers and pricing (server decides)
+  ✔ a coupon limited to a parent category discounts only matching lines, including subcategories; the client cannot influence totals (238.9028ms)
+  ✔ delivery rules edited in admin reach the app catalogue and the next order; a disabled slot is refused (131.2073ms)
+  ✔ COD limit is enforced by the server using the admin value (110.5048ms)
+✔ Workflow 5: offers and pricing (server decides) (480.9538ms)
+▶ Cross-cutting
+  ✔ returns: a customer request from the app is decided and refunded in admin, and the app sees the result (195.0062ms)
+  ✔ admin reports and dashboard count what the app ordered; authorisation holds both ways (171.5339ms)
+  ✔ database consistency: no negative stock, every order has a payment and items, ledger and movements add up (20.1695ms)
+✔ Cross-cutting (387.0394ms)
+ℹ tests 15
+ℹ suites 6
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3634.3076

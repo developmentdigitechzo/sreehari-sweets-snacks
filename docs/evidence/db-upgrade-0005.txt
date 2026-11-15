@@ -1,0 +1,29 @@
+4 migrations found in prisma/migrations
+Applying migration `0001_init`
+Applying migration `0002_auth_and_gps_addresses`
+Applying migration `0003_cart_line_options`
+Applying migration `0004_otp_reset_payments`
+The following migration(s) have been applied:
+migrations/
+    └─ migration.sql
+    └─ migration.sql
+    └─ migration.sql
+    └─ migration.sql
+All migrations have been successfully applied.
+rows before 0005: [ { role: 'CUSTOMER', count: '1' }, { role: 'ADMIN', count: '1' } ]
+5 migrations found in prisma/migrations
+Applying migration `0005_admin_panel`
+The following migration(s) have been applied:
+migrations/
+    └─ migration.sql
+All migrations have been successfully applied.
+roles after 0005: [
+  { role: 'CUSTOMER', count: '1' },
+  { role: 'SUPER_ADMIN', count: '1' }
+]
+old coupon: [ { code: 'OLD10', startsAt: null, categoryIds: [], productIds: [] } ]
+old banner: [ { id: 'b1', placement: 'home_slider', imageUrl: null } ]
+blocked: StockMovement is append-only
+blocked: StockMovement is append-only
+blocked: AuditLog is append-only
+blocked negative stockAfter: new row for relation "StockMovement" violates check constraint "StockMovement_after_nonneg"

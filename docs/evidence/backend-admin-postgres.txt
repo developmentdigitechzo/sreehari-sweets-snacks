@@ -1,0 +1,55 @@
+
+> shree-hari-backend@0.1.0 test:admin
+> node --import tsx --test src/integration/admin.integration.test.ts
+
+▶ admin authentication and permissions
+  ✔ staff can sign in; customers, wrong passwords and unknown emails get the same refusal (168.7382ms)
+  ✔ a customer token cannot use any admin route; no token is 401 (12.0569ms)
+  ✔ a manager cannot manage staff, read the audit log, change settings or pay refunds (167.9739ms)
+  ✔ role is checked against the database: a blocked manager is locked out immediately (230.7653ms)
+  ✔ the last super admin cannot be demoted or blocked; you cannot demote yourself (14.178ms)
+  ✔ creating staff validates input and refuses duplicates (74.5545ms)
+✔ admin authentication and permissions (1180.3444ms)
+▶ products, categories, inventory
+  ✔ create validates (price above MRP, duplicate SKU) and then succeeds, with opening stock logged (49.1594ms)
+  ✔ a published product appears in the mobile catalogue; unpublishing and archiving remove it (110.5275ms)
+  ✔ list filters, search and pagination work on real data (20.9478ms)
+  ✔ stock adjustment: add, set, never below zero, history explains every change (40.1526ms)
+  ✔ movement history is append-only at the database level (47.2715ms)
+  ✔ categories: create, cycle protection, delete refused while in use (55.692ms)
+  ✔ cakes overview lists the cake subcategories (8.4928ms)
+  ✔ uploaded-image rule: javascript: and plain-http image URLs are rejected (4.6583ms)
+✔ products, categories, inventory (337.7781ms)
+▶ orders, cancellation, returns and refunds
+  ✔ placing an order logs a stock movement; staff see it with customer, items and totals (49.0086ms)
+  ✔ status moves one step at a time; skipping is refused; two clicks cannot both win (21.4018ms)
+  ✔ cancelling needs a reason, returns stock, and closes an unpaid COD payment (51.1513ms)
+  ✔ delivered order: customer return request -> staff approve -> only a super admin can pay the refund, manually (149.2258ms)
+  ✔ a customer cannot raise a request on someone else's order (108.749ms)
+  ✔ orders list: tabs, stats, search, CSV export (26.3059ms)
+✔ orders, cancellation, returns and refunds (411.1147ms)
+▶ customers, offers, banners, delivery
+  ✔ block / unblock a customer: blocked customers cannot sign in (124.6963ms)
+  ✔ customer detail shows orders and addresses; list supports status filter, search and CSV (54.0675ms)
+  ✔ coupons: validation, create, category-restricted eligibility is enforced at checkout, used coupons cannot be deleted (92.34ms)
+  ✔ banners: create needs an image; tracked views/clicks show up as real counts (48.1048ms)
+  ✔ delivery settings change the real order total (free-delivery threshold and slot fee), and pincodes are managed (59.5538ms)
+✔ customers, offers, banners, delivery (379.2012ms)
+▶ notifications, segments, reports, audit
+  ✔ in-app message reaches customers and appears in their inbox; the unopened count is real (142.7987ms)
+  ✔ SMS / WhatsApp / push cannot be sent when the provider is not connected: refused, never recorded as sent (35.9003ms)
+  ✔ marketing channels only target opted-in customers (16.5515ms)
+  ✔ validation: title/message limits and scheduling in the past are rejected (6.2797ms)
+  ✔ segments: built-in set exists with real counts; custom segment and insights work (46.6698ms)
+  ✔ dashboard and reports return real numbers; CSV cells that start with = are neutralised (111.5426ms)
+  ✔ the audit log records who did what, and super admins can read it (9.4184ms)
+  ✔ integrations endpoint reports provider status without secrets (3.0981ms)
+✔ notifications, segments, reports, audit (372.7894ms)
+ℹ tests 33
+ℹ suites 5
+ℹ pass 33
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3003.0387

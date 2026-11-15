@@ -1,0 +1,9 @@
+node_modules
+.next
+.env
+.env.local
+npm-install.log
+next-env.d.ts
+
+# production build used for side-by-side checks
+.next-prod

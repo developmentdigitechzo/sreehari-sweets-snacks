@@ -1,0 +1,33 @@
+
+> shree-hari-backend@0.1.0 test:sync
+> node --import tsx --test src/integration/sync.integration.test.ts
+
+▶ SYNC TEST SWEET 001: Admin -> PostgreSQL -> app API
+  ✔ 1-3. create in admin: saved in PostgreSQL, and returned by the app API under the right category, with a New flag and a working image address (172.4056ms)
+  ✔ 4-5. change the price: PostgreSQL changes, the app API returns the new price, and HTTP revalidation sees the change (87.6935ms)
+  ✔ 6. change the image: a new image address is stored and returned; the old one is gone (48.7157ms)
+  ✔ 7-8. unpublish hides it from the app and from new purchases; publish brings it back (135.7537ms)
+  ✔ 9. stock: admin adjustment is what the app shows; zero stock refuses orders; history explains it (87.1798ms)
+  ✔ 10. archive removes it from the app while the row and its order history stay in PostgreSQL (22.3637ms)
+✔ SYNC TEST SWEET 001: Admin -> PostgreSQL -> app API (997.1338ms)
+▶ Change feed and caching
+  ✔ a long-poll returns the moment an admin change commits, and quietly times out when nothing changes (1376.4875ms)
+  ✔ a rejected admin request does NOT announce a change (18.9251ms)
+  ✔ personal data is never cached; shared data must be revalidated (181.5326ms)
+  ✔ the catalogue reports its version, store contact and delivery rules (nothing hard-coded in the app) (11.9016ms)
+✔ Change feed and caching (1589.5148ms)
+▶ Products saved in a parent category (the case that hid "Rasagula")
+  ✔ such a product is still listed under its collection and category; the admin API now refuses to create new ones (34.7054ms)
+  ✔ image links follow the address the caller used (a phone reaching the API by IP gets image links on that IP) (11.7659ms)
+✔ Products saved in a parent category (the case that hid "Rasagula") (46.7486ms)
+▶ Consistency
+  ✔ both apps see the same single database: counts match across admin diagnostics and app endpoints (16.7094ms)
+✔ Consistency (16.882ms)
+ℹ tests 13
+ℹ suites 4
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2900.3383

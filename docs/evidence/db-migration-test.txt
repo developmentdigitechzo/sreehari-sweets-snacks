@@ -1,0 +1,24 @@
+## A. Fresh database
+migrate deploy: 5 migrations found / successfully applied
+applied: 0001_init OK, 0002_auth_and_gps_addresses OK, 0003_cart_line_options OK, 0004_otp_reset_payments OK, 0005_admin_panel OK
+
+## B. Existing database (0001+0002 with data -> 0003)
+baseline (0001+0002) applied
+rows before 0003: customers=1 cartItems=1 addresses=1
+0003 deploy: successfully applied
+after: cartItem lineKey="v1||" qty=2 options=null customers=1 addresses=1
+old address new columns are NULL (not invented): {"state":null,"landmark":null,"latitude":null,"longitude":null}
+
+## C. Constraints, indexes and triggers (fresh_db)
+CHECK constraints: Address_coords_pair, Address_latitude_range, Address_longitude_range, CartItem_qty_positive, Coupon_value_nonneg, OrderItem_price_nonneg, OrderItem_qty_positive, Order_money_nonneg, Payment_amount_nonneg, ProductVariant_price_nonneg, ProductVariant_stock_nonneg, StockMovement_after_nonneg, cardinal_number_domain_check, yes_or_no_check
+key unique indexes: Order_number_key, Order_idempotencyKey_key, Customer_email_key, CartItem_customerId_lineKey_key
+triggers: reward_ledger_no_update_delete, stock_movement_no_update_delete, audit_log_no_update_delete
+order_number_seq first value: 12457
+foreign keys: 21
+  negative stock: rejected -> ProductVariant_stock_nonneg
+  price > mrp: rejected -> ProductVariant_price_nonneg
+  latitude out of range: rejected -> Address_latitude_range
+  lat without lon: rejected -> Address_coords_pair
+  duplicate email: rejected -> Customer_email_key
+  ledger UPDATE: rejected -> RewardLedger is append-only
+  ledger DELETE: rejected -> RewardLedger is append-only
