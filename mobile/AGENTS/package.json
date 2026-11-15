@@ -60,6 +60,8 @@
     "test": "node --import tsx --test src/utils/utils.test.ts src/services/location.test.ts src/services/permissions/permissions.test.ts src/services/voiceErrors.test.ts src/utils/validation.test.ts src/config/apiUrl.test.ts src/services/deliveryDates.test.ts",
     "lint": "node node_modules/eslint/bin/eslint.js . --max-warnings=0",
     "lint:fix": "node node_modules/eslint/bin/eslint.js . --fix",
+    "build": "npx expo export -p web",
+    "build:web": "npx expo export -p web",
     "start:live": "node node_modules/expo/bin/cli start --clear"
   },
   "private": true
